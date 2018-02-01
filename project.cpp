@@ -108,6 +108,7 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination 
     SDL_BlitSurface( source, NULL, destination, &offset );
 }
 void gift_motion (gft * gift,int n,SDL_Surface * screen )
+void gift(gft * gift,int n,SDL_Surface * screen )
 {
 	for(int i=0 ; i<n ; i++)
 	{
@@ -120,6 +121,27 @@ void gift_motion (gft * gift,int n,SDL_Surface * screen )
 				return;
 			}
 			apply_surface(gift[i].xp , gift[i].yp , gift[i].surface,screen);	
+		}
+		else 
+		{
+			if(gift[i].state==1)
+			{
+				gift[i].time--;
+				if(gift[i].time==0)
+					gift[i].state=0;
+			}
+			else
+			{
+				if(rand()%10>6)
+				{
+					gift[i].xp=rand()%450;
+					gift[i].yp=0;
+					gift[i].state=2;
+					gift[i].vy=rand()%3+1;
+
+				} 
+			}
+
 		}
 	}
 	
