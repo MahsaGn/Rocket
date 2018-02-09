@@ -6,6 +6,9 @@
 #include<SDL/SDL_gfxPrimitives.h>
 #include <string>
 #include<vector>
+#include "sstream"
+#include<cstdlib>
+#include<fstream>
 using namespace std;
 struct rckt
 {
@@ -66,6 +69,7 @@ struct ammo
 	int xp;
 	int yp;
 	int r=10;
+	int state;
 	float vy;
 	SDL_Surface * surface;
 };
@@ -78,7 +82,13 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,int l
 bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt & oppRocket);//if true the opp is killed
 void Meteor(vector <meteor> & meteorite,SDL_Surface *screen,int roundNum,int level);
 void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,int xrocket,int yrocket,int roundNum,int level);
-
+bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,std::vector<ammo> shot,int * score,SDL_Surface * screen);
+void set_text( int x, int y, SDL_Surface* source, SDL_Surface* destination );
+void write_menu_score (SDL_Surface *screen,int score);
+void write_menu_health (SDL_Surface *screen,int score);
+void write_menu_shot(SDL_Surface *screen,int score);
+void write_menu_level(SDL_Surface *screen,int score);
+void write_menu_OPP_HEALTH(SDL_Surface *screen,int score);
 int main()
 {
 	int bgX = 0, bgy = 0;
@@ -115,8 +125,18 @@ int main()
 	gift[4].surface=load_image("gift4.png");
 	gift[5].surface=load_image("gift5.png");
 	gift[6].surface=load_image("gift6.png");
+	cout<<"A\n";
 	do
+
 	{
+		write_menu_score(screen,score);
+		write_menu_health(screen,rocket.health);
+		write_menu_level(screen,level);
+		int sh;
+		for(int j=0;j<shot.size();j)
+			if(shot[j].state==1)
+				sh++;
+		write_menu_shot(screen,sh);
 		roundNum++;
 		bgy+=BGvelocity;
 		if(bgy>=picture->h)
@@ -130,6 +150,12 @@ int main()
     	Meteor(meteorite,screen,roundNum,level);
     	Coin(coin,screen,gift[5],rocket.xp,rocket.yp,roundNum,level);
     	score=(int)(roundNum/20)+coinNum;
+    	cout<<"befor\n";
+		if(colliosion (rocket,&gift[0],meteorite,coin,shot,&score, screen))
+		{
+			return 0;
+		}
+		cout<<"after\n";
     	if((score%100==0 && score!=0) || oppRocket.state==1)
 		{
     		OppRocket(oppRocket,shot,screen,level);
@@ -138,8 +164,10 @@ int main()
 		if(checkLevel==true)// b marhale bad raftim pas soraat ha bishtar mishe
 			level++;
 		//cout<<score<<endl<<level<<endl<<endl;
+		
 		SDL_Flip(screen);
 		SDL_Delay(10);
+		boxRGBA(screen,530,100,700	, 600 ,0,0,0,255);
 	}while(meniu==true);
 	SDL_Delay(1000);
 	return 0;
@@ -234,6 +262,7 @@ bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * scre
         			sht.xp=rocket.xp; 
         			sht.yp=rocket.yp; 
         			sht.vy=-8;
+        			sht.state=1;
         			sht.surface=load_image("shot-up.png"); 
         			shot.push_back(sht); 
        			}
@@ -273,6 +302,7 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,int l
 	}
 	else
 	{
+		write_menu_OPP_HEALTH(screen,oppRocket.health);
 		if(oppRocket.vy!=0)//hengame vared shodan b safhe
 		{
 			oppRocket.yp+=oppRocket.vy	;
@@ -293,6 +323,7 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,int l
 			sht.xp=oppRocket.xp-oppRocket.vx+(oppRocket.width/2)-2;
 			sht.yp=oppRocket.yp+oppRocket.height;
 			sht.vy=8;
+			sht.state=0;
 			sht.surface=load_image("shot-down.png");
 			shot.push_back(sht);
 		}
@@ -310,7 +341,7 @@ bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt &oppRocket)
 				shot.erase(shot.begin()+i);
 			if(shot[i].vy<0)
 			{
-				if(oppRocket.state==1 && shot[i].yp>=oppRocket.ymin)
+				if(oppRocket.state==1 && shot[i].yp>=oppRocket.ymin && shot[i].state==1)
 				{
 					oppRocket.health--;
 					if(oppRocket.health==0)
@@ -334,6 +365,7 @@ void Meteor(vector <meteor> & meteorite,SDL_Surface *screen,int roundNum,int lev
 		mtr.yp=0;
 		mtr.vy=8;
 		mtr.surface=load_image("meteorite-s.png");
+		mtr.kind=1;
 		meteorite.push_back(mtr);
 	}
 	if((roundNum%(60-(int)(roundNum/1500))==0 && rand()%2==0) || meteorite.size()==0)
@@ -343,6 +375,7 @@ void Meteor(vector <meteor> & meteorite,SDL_Surface *screen,int roundNum,int lev
 		mtr.xp=rand()%(450-2*mtr.r);
 		mtr.yp=0;
 		mtr.vy=5;
+		mtr.kind=2;
 		mtr.surface=load_image("meteorite-b.png");
 		meteorite.push_back(mtr);
 	}
@@ -413,6 +446,219 @@ void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,int xrocket,int yrock
 			}
 		}
 	}
+}
+bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,std::vector<ammo> shot,int * score,SDL_Surface * screen)
+{
+	cout<<"in function\n";
+	int x,y,r;
+	int Xbcircle,Ybcircle,Xscircle,Yscircle;
+	const int Rbcircle=23;
+	const int Rscircle=16;
+	if(rocket.vx > 0)
+	{
+		Xbcircle=rocket.xp+20;
+		Ybcircle=rocket.yp+60;
+		Xscircle=rocket.xp+25;
+		Yscircle=rocket.yp+17;	
+	}
+	else
+	{
+		Xbcircle=rocket.xp+20;
+		Ybcircle=rocket.yp+58;
+		Xscircle=rocket.xp+14;
+		Yscircle=rocket.yp+15;
+	}
+	
+	r=30.30/2;//gift
+	for(int i=0 ; i<6 ; i++)
+	{	
+		if(gift[i].state == 2)
+		{
+			x=gift[i].xp+r;
+			y=gift[i].yp+r;
+		
+			if(sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2)) <= Rscircle+r
+			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r)
+			{
+				gift[i].state=1;
+			//	cout<<"distance....."<<sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2))<<"...............r ="
+			//	<<Rscircle+r<<"\n";
+			//	cout<<"distance....."<<sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2))<<"...............r ="
+			//	<<Rbcircle+r<<"\n";
+			//	cout<<"Rbcircle....."<<Rbcircle<<endl;
+			//	cout<<"tessssssssssssssssssssss\n";
+			//	SDL_Delay(5000);
+			}
+		}
+	}
+	r=20.20/2;//coin
+	for(int i=0 ; i<coin.size() ; i++)
+	{
+		x=coin[i].xp+r;
+		y=coin[i].yp+r;
+		if(sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2)) <= Rscircle+r
+			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r)
+		{
+			(*score)+=coin[i].valu;
+			coin.erase(coin.begin()+i);
+			//cout<<"tessssssssssssssssssssss\n";
+			//SDL_Delay(1000);
+		}
+
+	}
+	//meteor
+	for(int i=0 ; i<meteorite.size() ; i++)
+	{
+		r=meteorite[i].r;
+		cout<< "r............."<<meteorite[i].r<<endl;
+		if(meteorite[i].kind ==1)
+		{
+			x=meteorite[i].xp+38;
+			y=meteorite[i].yp+82;
+		}
+		else
+		{
+			x=meteorite[i].xp+51;
+			y=meteorite[i].yp+47;
+
+		}
+		if(sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2)) <= Rscircle+r
+			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r)
+		{
+			return true;
+		}
+	}
+	//edge
+	if(rocket.xp >= 411 || rocket.xp<0)
+		return true;
+	//tir
+	for(int i=0 ; i<shot.size() ; i++)
+	{
+		if(shot[i].state==0)
+		{
+			SDL_Rect DShot;
+			DShot.w=7;
+			DShot.h=56;
+			bool BCircle,SCircle;
+			for(int i=0 ; i<shot.size() ; i++)
+			{
+				bool BCircle=false,SCircle=false;
+				DShot.x=shot[i].xp;
+				DShot.y=shot[i].yp;
+				int cx,cy;
+				if(Xbcircle < DShot.x)
+					cx=DShot.x;
+				else if (Xbcircle >DShot.x +DShot.w)
+					cx=DShot.x +DShot.w;
+				else
+					cx=Xbcircle;
+
+				if(Ybcircle < DShot.y)
+					cy=DShot.y;
+				else if (Ybcircle >DShot.y +DShot.h)
+					cy=DShot.y +DShot.h;
+				else
+					cy=Ybcircle;
+				if(sqrt(pow((Xbcircle-cx),2) + pow((Ybcircle-cy),2)) < Rbcircle)
+					BCircle=true;
+		////////////////////////////////////////////////////////////////////////////smalller circle
+				if(Xscircle < DShot.x)
+					cx=DShot.x;
+				else if (Xscircle >DShot.x +DShot.w)
+					cx=DShot.x +DShot.w;
+				else
+					cx=Xscircle;
+
+				if(Yscircle < DShot.y)
+					cy=DShot.y;
+				else if (Yscircle >DShot.y +DShot.h)
+					cy=DShot.y +DShot.h;
+				else
+					cy=Yscircle;
+				if(sqrt(pow((Xscircle-cx),2) + pow((Yscircle-cy),2)) < Rbcircle)
+					SCircle=true;
+				if(SCircle==true ||BCircle==true)
+					rocket.health--;
+			}
+		}
+	}
+	
+	return false;
+
+
+}
+void set_text( int x, int y, SDL_Surface* source, SDL_Surface* destination )
+{
+    SDL_Rect offset;
+    offset.x = x;
+    offset.y = y;
+    SDL_BlitSurface( source, NULL, destination, &offset );
+}
+void write_menu_score (SDL_Surface *screen,int score)
+{
+	TTF_Init();
+	TTF_Font* font;
+	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	SDL_Surface* text;
+	SDL_Color text_color={100,0,200};
+	stringstream score2;
+    score2 <<" SCORE : "<<score;
+	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
+	set_text(460,100,text,screen);	
+	SDL_Flip(screen);
+
+}
+void write_menu_health (SDL_Surface *screen,int score)
+{
+	TTF_Init();
+	TTF_Font* font;
+	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	SDL_Surface* text;
+	SDL_Color text_color={100,0,200};
+	stringstream score2;
+    score2 <<" HEALTH : "<<score;
+	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
+	set_text(460,150,text,screen);	
+	SDL_Flip(screen);	
+}
+void write_menu_shot (SDL_Surface *screen,int score)
+{
+	TTF_Init();
+	TTF_Font* font;
+	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	SDL_Surface* text;
+	SDL_Color text_color={100,0,200};
+	stringstream score2;
+    score2 <<" SHOT : "<<score;
+	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
+	set_text(460,200,text,screen);	
+	SDL_Flip(screen);	
+}
+void write_menu_level (SDL_Surface *screen,int score)
+{
+	TTF_Init();
+	TTF_Font* font;
+	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	SDL_Surface* text;
+	SDL_Color text_color={100,0,200};
+	stringstream score2;
+    score2 <<" LEVEL : "<<score;
+	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
+	set_text(460,50,text,screen);	
+	SDL_Flip(screen);	
+}
+void write_menu_OPP_HEALTH (SDL_Surface *screen,int score)
+{
+	TTF_Init();
+	TTF_Font* font;
+	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	SDL_Surface* text;
+	SDL_Color text_color={255,0,0};
+	stringstream score2;
+    score2 <<" HEALTH : "<<score;
+	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
+	set_text(460,300,text,screen);	
+	SDL_Flip(screen);	
 }
 //////////////////////////////
 /*
