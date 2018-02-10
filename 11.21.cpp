@@ -38,10 +38,10 @@ struct gft
 {
 	int xp;
 	int yp=0;
-	int r;
+	int r=10;
 	float vy;
 	int state=0;
-	int time=20;
+	int time=600;
 	SDL_Surface * surface;
 };
 struct meteor
@@ -59,7 +59,7 @@ struct cn
 	int yp=0;
 	int r=5;
 	int valu=1;
-	int vx=0;
+	float vx=0;
 	int vy=5	;
 	int zarib=1;
 	SDL_Surface * surface;
@@ -68,7 +68,7 @@ struct ammo
 {
 	int xp;
 	int yp;
-	int r=10;
+	int r=100;
 	int state;
 	float vy;
 	SDL_Surface * surface;
@@ -79,10 +79,11 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination 
 void Gift(gft *gift,int n, SDL_Surface *screen,int roundNum,int level);
 bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * screen,int level);//menu in mixed with this
 void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,int level);
-bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt & oppRocket);//if true the opp is killed
+bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt & oppRocket,gft gift2);//if true the opp is killed
 void Meteor(vector <meteor> & meteorite,SDL_Surface *screen,int roundNum,int level);
-void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,int xrocket,int yrocket,int roundNum,int level);
-bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,std::vector<ammo> shot,int * score,SDL_Surface * screen);
+void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,gft gift3,int xrocket,int yrocket,int roundNum,int level);
+bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,
+	std::vector<ammo> &shot,int * score,SDL_Surface * screen,bool* protecter);
 void set_text( int x, int y, SDL_Surface* source, SDL_Surface* destination );
 void write_menu_score (SDL_Surface *screen,int score);
 void write_menu_health (SDL_Surface *screen,int score);
@@ -97,13 +98,15 @@ int main()
 	int BGvelocity=4;
 	int level=1;
 	int coinNum=0;
+	bool protecter=false;
+	bool checkcolision=true;
 	SDL_Event event;	
 	SDL_Surface * screen=NULL;
 	SDL_Surface * picture;
 	gft gift[5];
 	rckt rocket;
 	oppRckt oppRocket;
-	vector <ammo> shot;
+	vector <ammo> shot=std::vector<ammo>(0);
 	vector <meteor> meteorite;
 	vector <cn> coin;
 	screen=SDL_SetVideoMode( 650, 700, 32, 0 );
@@ -118,49 +121,73 @@ int main()
 		gift[i].xp=10+(10*i);
 		gift[i].vy=i+1;
 	}
-	gift[0].surface=load_image("gift0.png");
-	gift[1].surface=load_image("gift1.png");
-	gift[2].surface=load_image("gift2.png");
-	gift[3].surface=load_image("gift3.png");
-	gift[4].surface=load_image("gift4.png");
-	gift[5].surface=load_image("gift5.png");
-	gift[6].surface=load_image("gift6.png");
+	gift[0].surface=load_image("gift0.png");//x2
+	gift[1].surface=load_image("gift1.png");//protecter
+	gift[2].surface=load_image("gift2.png");//speed plus
+	gift[3].surface=load_image("gift3.png");//magnet
+	gift[4].surface=load_image("gift4.png");//slwer
+	gift[5].surface=load_image("gift5.png");//more coin
+	gift[6].surface=load_image("gift6.png");//ammo
 	cout<<"A\n";
 	do
 
 	{
-		write_menu_score(screen,score);
-		write_menu_health(screen,rocket.health);
-		write_menu_level(screen,level);
+	// write_menu_score(screen,score);
+		// cout<<"1\n";
+		// write_menu_health(screen,rocket.health);
+		// cout<<"2\n";
+		//write_menu_level(screen,level);
+		// cout<<"3\n";
 		int sh;
-		for(int j=0;j<shot.size();j)
-			if(shot[j].state==1)
-				sh++;
+		// cout<<"4\n";
+		sh=0;
+		if(shot.size()!=0)
+			for(int j=0;j<shot.size();j++)
+			{
+				// cout<<"5\n";
+				if(shot[j].vy<0)
+				{
+					// cout<<"6\n";
+					sh++;
+				}
+				// cout<<"7\n";
+			}
+		// cout<<"8\n";
 		write_menu_shot(screen,sh);
+		// cout<<"9\n";
 		roundNum++;
+		// cout<<"10\n";
 		bgy+=BGvelocity;
+		// cout<<"10\n";
 		if(bgy>=picture->h)
 		{
+			// cout<<"11\n";
 			bgy=0;
 		}
+		cout<<"12\n";
 	  	apply_surface( bgX, bgy, picture, screen ); 
       	apply_surface( bgX , bgy-picture->h, picture, screen );
-    	Gift(&gift[0],5, screen,roundNum,level);
+      	cout<<"13\n";
+    	Gift(&gift[0],7, screen,roundNum,level);
+    	cout<<"14\n";
     	meniu=Rocket(rocket,shot,event,screen,level);
+    	cout<<"15\n";
     	Meteor(meteorite,screen,roundNum,level);
-    	Coin(coin,screen,gift[5],rocket.xp,rocket.yp,roundNum,level);
+    	cout<<"16\n";
+    	Coin(coin,screen,gift[5],gift[3],rocket.xp,rocket.yp,roundNum,level);
+    	cout<<"17\n";
     	score=(int)(roundNum/20)+coinNum;
-    	cout<<"befor\n";
-		if(colliosion (rocket,&gift[0],meteorite,coin,shot,&score, screen))
-		{
-			return 0;
-		}
-		cout<<"after\n";
+    	cout<<"18\n";
+		checkcolision=colliosion (rocket,&gift[0],meteorite,coin,shot,&score, screen,&protecter);
+		cout<<"p\n";
     	if((score%100==0 && score!=0) || oppRocket.state==1)
 		{
+			cout<<"w\n";
     		OppRocket(oppRocket,shot,screen,level);
 		}
-    	checkLevel=Shot(shot,screen,oppRocket);
+		// cout<<"G\n";
+    	checkLevel=Shot(shot,screen,oppRocket,gift[2]);
+    	// cout<<"h\n";
 		if(checkLevel==true)// b marhale bad raftim pas soraat ha bishtar mishe
 			level++;
 		//cout<<score<<endl<<level<<endl<<endl;
@@ -168,8 +195,9 @@ int main()
 		SDL_Flip(screen);
 		SDL_Delay(10);
 		boxRGBA(screen,530,100,700	, 600 ,0,0,0,255);
-	}while(meniu==true);
-	SDL_Delay(1000);
+		// cout<<"e\n";
+	}while(meniu==true && checkcolision==false);
+	  SDL_Delay(1000);
 	return 0;
 }
 
@@ -215,14 +243,18 @@ void Gift(gft * gift,int n,SDL_Surface * screen ,int roundNum ,int level)//1.com
 	}	
 			
 			
-	if(rand()%(300+100*level)==4)
+	if(rand()%(100*level+50)==4)
 	{
-		int i;
-		do
+		int i=1;
+		
+		 do
 		{
+		//	cout<<"do while\n";
 			i=rand()%n;
 		}while(gift[i].state!=0);
-		gift[i].time=20 - level;
+
+		//cout<<"after\n";
+		gift[i].time=600 ;
 		gift[i].xp=rand()%(450-2*gift[i].r);
 		gift[i].yp=0;
 		gift[i].state=2;
@@ -257,6 +289,7 @@ bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * scre
         		} 
         		else if(keystates[ SDLK_UP ] && rocket.shotnum>0)//2.tir shelik kone
         		{ 
+        			
          			rocket.shotnum--;
         			ammo sht; 
         			sht.xp=rocket.xp; 
@@ -271,7 +304,7 @@ bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * scre
     				int check=false;
     				do
     				{
-    					SDL_Delay(500);
+    				SDL_Delay(500);
     					if(SDL_PollEvent( &event ) && event.type == SDL_KEYDOWN && event.key.keysym.sym==SDLK_s)
     						check=true;
     				}while( check==false);
@@ -280,8 +313,11 @@ bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * scre
     				return false;
         	} 
 
-    	}  
-    	rocket.xp+=(rocket.vx+level);
+    	}
+    	if(rocket.vx>0)
+    		rocket.xp+=(rocket.vx+level);
+    	else
+    		rocket.xp+=(rocket.vx-level);
     }  
     /*if(rocket_strike()==true) 
     { 
@@ -302,12 +338,17 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,int l
 	}
 	else
 	{
-		write_menu_OPP_HEALTH(screen,oppRocket.health);
+		// cout<<"A\n";
+		//write_menu_OPP_HEALTH(screen,oppRocket.health);
+	// cout<<"BB\n";
 		if(oppRocket.vy!=0)//hengame vared shodan b safhe
 		{
+		// cout<<"CC\n";
 			oppRocket.yp+=oppRocket.vy	;
+			// cout<<"D\n";
 			if(oppRocket.yp>oppRocket.ymin)
 				oppRocket.vy=0;
+			// cout<<"E\n";
 		}
 		else//bad az mostaghar shodan
 		{
@@ -330,19 +371,23 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,int l
 	}
 	apply_surface(oppRocket.xp,oppRocket.yp,oppRocket.surface,screen);
 }
-bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt &oppRocket) 	
+bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt &oppRocket,gft gift2) 	
 {
    	if(shot.size()!=0)
 		for(int i=0;i<shot.size();i++)
-		{
+		{	
+			if(gift2.state==0)
+				shot[i].vy=-8;
 			shot[i].yp+=shot[i].vy;
 			apply_surface(shot[i].xp,shot[i].yp,shot[i].surface,screen);
-			if((shot[i].vy>0 && shot[i].yp==700-40) || (shot[i].vy<0 && shot[i].yp==0))
+			if((shot[i].vy>0 && shot[i].yp>=700-40) || (shot[i].vy<0 && shot[i].yp<=0))
 				shot.erase(shot.begin()+i);
 			if(shot[i].vy<0)
 			{
-				if(oppRocket.state==1 && shot[i].yp>=oppRocket.ymin && shot[i].state==1)
+				if(oppRocket.state==1 && shot[i].yp<=oppRocket.ymin && shot[i].xp+2 >oppRocket.xp 
+					&& shot[i].xp+2<oppRocket.xp+oppRocket.width)
 				{
+					shot.erase(shot.begin()+i);
 					oppRocket.health--;
 					if(oppRocket.health==0)
 					{
@@ -352,6 +397,9 @@ bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt &oppRocket)
 					}
 				}
 			}
+			else
+				if(shot[i].yp>=700)
+					shot.erase(shot.begin()+i);
 		}
 		return false;
 }
@@ -390,7 +438,7 @@ void Meteor(vector <meteor> & meteorite,SDL_Surface *screen,int roundNum,int lev
 		}
 	}
 }
-void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,int xrocket,int yrocket,int roundNum,int level)//Done
+void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,gft gift3,int xrocket,int yrocket,int roundNum,int level)//Done
 {
 	int zarib =1;
 	if(gift5.time!=0)
@@ -437,6 +485,8 @@ void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,int xrocket,int yrock
 	{
 		for(int i=0;i<coin.size();i++)
 		{
+			if(gift3.state==0)
+				coin[i].valu=1;
 			coin[i].xp+=coin[i].vx; 
 			coin[i].yp+=coin[i].vy;
 			apply_surface(coin[i].xp,coin[i].yp,coin[i].surface,screen);
@@ -447,9 +497,9 @@ void Coin(vector <cn> &coin,SDL_Surface * screen,gft gift5,int xrocket,int yrock
 		}
 	}
 }
-bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,std::vector<ammo> shot,int * score,SDL_Surface * screen)
+bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,std::vector<ammo> &shot
+	,int * score,SDL_Surface * screen,bool * protecter)
 {
-	cout<<"in function\n";
 	int x,y,r;
 	int Xbcircle,Ybcircle,Xscircle,Yscircle;
 	const int Rbcircle=23;
@@ -481,6 +531,36 @@ bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vect
 			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r)
 			{
 				gift[i].state=1;
+				switch (i)
+				{
+					case 0:
+						if(coin.size()!=0)
+							for (int j = 0; j < coin.size(); j++)
+							{
+								coin[j].valu=2;
+							}
+						break;
+					case 1:
+						*protecter=true;
+						break;
+					case 2:
+						if(shot.size()!=0)
+							for (int j = 0; j < shot.size(); j++)
+							{
+								if(shot[j].vy<=0)
+									shot[j].vy=-12;
+							}
+						break;	
+					case 4:
+						if(rocket.vx>0)
+							rocket.vx=4;
+						else
+							rocket.vx=-4;
+						break;
+					
+				}	
+					
+				
 			//	cout<<"distance....."<<sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2))<<"...............r ="
 			//	<<Rscircle+r<<"\n";
 			//	cout<<"distance....."<<sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2))<<"...............r ="
@@ -490,12 +570,33 @@ bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vect
 			//	SDL_Delay(5000);
 			}
 		}
+		else if(i==4 && gift[i].state==0)
+		{
+			if(rocket.vx>0)
+				rocket.vx=6;
+			else
+				rocket.vx=-6;
+		}
 	}
 	r=20.20/2;//coin
+	int distancecoin=0;
 	for(int i=0 ; i<coin.size() ; i++)
 	{
 		x=coin[i].xp+r;
 		y=coin[i].yp+r;
+	if(gift[3].state==1)
+	{
+		distancecoin=100;
+		if(sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2)) <= Rscircle+r+distancecoin
+			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r+distancecoin)
+		{
+			if(0<rocket.yp-y)
+				coin[i].vy=15;
+			else
+				coin[i].vy=-15;
+			coin[i].vx=coin[i].vy*(rocket.xp-x)/(float)(rocket.yp-y);
+		}
+	}
 		if(sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2)) <= Rscircle+r
 			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r)
 		{
@@ -509,8 +610,7 @@ bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vect
 	//meteor
 	for(int i=0 ; i<meteorite.size() ; i++)
 	{
-		r=meteorite[i].r;
-		cout<< "r............."<<meteorite[i].r<<endl;
+		r=meteorite[i].r-4;
 		if(meteorite[i].kind ==1)
 		{
 			x=meteorite[i].xp+38;
@@ -525,7 +625,10 @@ bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vect
 		if(sqrt(pow((Xscircle-x),2) + pow((Yscircle-y),2)) <= Rscircle+r
 			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r)
 		{
-			return true;
+			if(*protecter!=true)
+			{
+				//return true;
+			}
 		}
 	}
 	//edge
@@ -540,7 +643,7 @@ bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vect
 			DShot.w=7;
 			DShot.h=56;
 			bool BCircle,SCircle;
-			for(int i=0 ; i<shot.size() ; i++)
+			//for(int i=0 ; i<shot.size() ; i++)
 			{
 				bool BCircle=false,SCircle=false;
 				DShot.x=shot[i].xp;
@@ -578,14 +681,16 @@ bool colliosion (rckt rocket, gft *gift,std::vector<meteor> &meteorite,std::vect
 				if(sqrt(pow((Xscircle-cx),2) + pow((Yscircle-cy),2)) < Rbcircle)
 					SCircle=true;
 				if(SCircle==true ||BCircle==true)
+				{
+
+					shot.erase(shot.begin()+i);
 					rocket.health--;
+				}	
 			}
 		}
 	}
 	
 	return false;
-
-
 }
 void set_text( int x, int y, SDL_Surface* source, SDL_Surface* destination )
 {
@@ -598,7 +703,7 @@ void write_menu_score (SDL_Surface *screen,int score)
 {
 	TTF_Init();
 	TTF_Font* font;
-	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	font = TTF_OpenFont("ARIAL.ttf",20);
 	SDL_Surface* text;
 	SDL_Color text_color={100,0,200};
 	stringstream score2;
@@ -612,7 +717,7 @@ void write_menu_health (SDL_Surface *screen,int score)
 {
 	TTF_Init();
 	TTF_Font* font;
-	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	font = TTF_OpenFont("ARIAL.ttf",20);
 	SDL_Surface* text;
 	SDL_Color text_color={100,0,200};
 	stringstream score2;
@@ -624,21 +729,32 @@ void write_menu_health (SDL_Surface *screen,int score)
 void write_menu_shot (SDL_Surface *screen,int score)
 {
 	TTF_Init();
+	// cout<<"1.1\n";
 	TTF_Font* font;
-	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	// cout<<"1.2\n";
+	font = TTF_OpenFont("ARIAL.ttf",20);
+	// cout<<"1.3\n";
 	SDL_Surface* text;
+	// cout<<"1.4\n";
 	SDL_Color text_color={100,0,200};
+	// cout<<"1.5\n";
 	stringstream score2;
+	// cout<<"1.6\n";
     score2 <<" SHOT : "<<score;
-	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
+    // cout<<"1.7\n";
+	text = TTF_RenderText_Solid(font,"hi", text_color);
+	cout<<score2.str().c_str();
+	// cout<<"1.8\n";
 	set_text(460,200,text,screen);	
+	// cout<<"1.9\n";
 	SDL_Flip(screen);	
+	// cout<<"1.10\n";
 }
 void write_menu_level (SDL_Surface *screen,int score)
 {
 	TTF_Init();
 	TTF_Font* font;
-	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	font = TTF_OpenFont("ARIAL.ttf",20);
 	SDL_Surface* text;
 	SDL_Color text_color={100,0,200};
 	stringstream score2;
@@ -651,7 +767,7 @@ void write_menu_OPP_HEALTH (SDL_Surface *screen,int score)
 {
 	TTF_Init();
 	TTF_Font* font;
-	font = TTF_OpenFont("KaushanScript-Regular.otf",20);
+	font = TTF_OpenFont("ARIAL.ttf",20);
 	SDL_Surface* text;
 	SDL_Color text_color={255,0,0};
 	stringstream score2;
