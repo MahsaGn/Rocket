@@ -9,6 +9,7 @@
 #include "sstream"
 #include<cstdlib>
 #include<fstream>
+#include<ctime>
 using namespace std;
 struct rckt
 {
@@ -85,7 +86,7 @@ void Meteor(vector <meteor> & meteorite,SDL_Surface *screen
 	,SDL_Surface *meteorSPic,SDL_Surface *meteorBPic,int roundNum,int level);
 void Coin(vector <cn> &coin, vector <meteor> meteorite,SDL_Surface * screen,SDL_Surface *coinPic,gft gift5,gft gift3,int xrocket,int yrocket,int roundNum,int level);
 bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,
-	std::vector<ammo> &shot,int * score,SDL_Surface * screen,bool* protecter);
+	std::vector<ammo> &shot,int * score,SDL_Surface * screen,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic,bool* protecter);
 void set_text( int x, int y, SDL_Surface* source,SDL_Surface *coinPic, SDL_Surface* destination );
 void write_menu_score (SDL_Surface *screen,int score);
 void write_menu_health (SDL_Surface *screen,int score);
@@ -94,6 +95,7 @@ void write_menu_level(SDL_Surface *screen,int score);
 void write_menu_OPP_HEALTH(SDL_Surface *screen,int score);
 int main()
 {
+	srand(time(0));
 	int bgX = 0, bgy = 0;
 	int roundNum=0;
 	int score;
@@ -184,7 +186,7 @@ int main()
     	// cout<<"17\n";
     	score=(int)(roundNum/20)+coinNum;
     	// cout<<"18\n";
-		checkcolision=colliosion (rocket,&gift[0],meteorite,coin,shot,&score, screen,&protecter);
+		checkcolision=colliosion (rocket,&gift[0],meteorite,coin,shot,&score, screen,rocketR_pic,rocketL_pic,&protecter);
 		//cout<<checkcolision<<endl;
     	if((score%100==0 && score!=0) || !oppRocket.state==1)
 		{
@@ -196,7 +198,7 @@ int main()
     	// cout<<"h\n";
 		if(checkLevel==true)// b marhale bad raftim pas soraat ha bishtar mishe
 			level++;
-		//cout<<score<<endl<<level<<endl<<endl;
+		cout<<score<<endl<<level<<endl<<endl;
 		
 		SDL_Flip(screen);
 		SDL_Delay(10);
@@ -452,7 +454,7 @@ void Coin(vector <cn> &coin, vector <meteor> meteorite,SDL_Surface * screen,SDL_
 			center=rand()%390+30;
 			int i;
 			for(i=meteorite.size()-1;i>=0;i--)
-				if(sqrt(pow(meteorite[i].yp,2)+pow(meteorite[i].xp-center,2))<meteorite[i].r+10)
+				if(sqrt(pow(meteorite[i].yp,2)+pow(meteorite[i].xp-center,2))<meteorite[i].r+20)
 					break;
 			if(i==-1)
 				checlcol=false;
@@ -497,6 +499,7 @@ void Coin(vector <cn> &coin, vector <meteor> meteorite,SDL_Surface * screen,SDL_
 	{
 		for(int i=0;i<coin.size();i++)
 		{
+			cout<<coin[i].valu<<endl;
 			if(gift3.state==0)
 				coin[i].valu=1;
 			coin[i].xp+=coin[i].vx; 
@@ -510,7 +513,7 @@ void Coin(vector <cn> &coin, vector <meteor> meteorite,SDL_Surface * screen,SDL_
 	}
 }
 bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vector<cn> &coin,std::vector<ammo> &shot
-	,int * score,SDL_Surface * screen,bool * protecter)
+	,int * score,SDL_Surface * screen,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic,bool * protecter)
 {
 	int x,y,r;
 	int Xbcircle,Ybcircle,Xscircle,Yscircle;
@@ -545,13 +548,6 @@ bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vec
 				gift[i].state=1;
 				switch (i)
 				{
-					case 0:
-						if(coin.size()!=0)
-							for (int j = 0; j < coin.size(); j++)
-							{
-								coin[j].valu=2;
-							}
-						break;
 					case 1:
 						*protecter=true;
 						break;
@@ -583,18 +579,28 @@ bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vec
 			//	SDL_Delay(5000);
 			}
 		}
-		if(i==4 && gift[i].state==0)
+		switch(i)
 		{
-			if(rocket.vx>0)
-				rocket.vx=6;
-			else
-				rocket.vx=-6;
-		}
+			case 4:
+				if(gift[i].state==0)
+				{
+					if(rocket.vx>0)
+						rocket.vx=6;
+					else
+						rocket.vx=-6;
+				}
+				break;
+			case 1:
+				if(gift[i].state==0)
+					*protecter=false;
+		};
 	}
 	r=20.20/2;//coin
 	int distancecoin=0;
 	for(int i=0 ; i<coin.size() ; i++)
 	{
+		if(gift[0].state==1)
+			coin[i].valu=2;
 		x=coin[i].xp+r;
 		y=coin[i].yp+r;
 	if(gift[3].state==1)
@@ -604,9 +610,9 @@ bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vec
 			 || sqrt(pow((Xbcircle-x),2) + pow((Ybcircle-y),2)) <= Rbcircle+r+distancecoin)
 		{
 			if(0<rocket.yp-y)
-				coin[i].vy=15;
+				coin[i].vy=20;
 			else
-				coin[i].vy=-15;
+				coin[i].vy=-20;
 			coin[i].vx=coin[i].vy*(rocket.xp-x)/(float)(rocket.yp-y);
 		}
 	}
@@ -640,13 +646,24 @@ bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vec
 		{
 			if(*protecter!=true)
 			{
-				//return true;
+				return true;
 			}
 		}
 	}
 	//edge
-	if(rocket.xp+20 >= 450|| rocket.xp<0)
-		return true;
+	if(rocket.xp+40 >= 450|| rocket.xp<0)
+		if(*protecter!=true)
+			{
+				return true;
+			}
+		else
+		{
+			rocket.vx*=-1;
+			if(rocket.vx>0)
+				rocket.surface=rocketRPic;
+			else
+				rocket.surface=rocketLPic;
+		}
 	//tir
 	for(int i=0 ; i<shot.size() ; i++)
 	{
