@@ -80,9 +80,9 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination 
 //void gift_motion (gft * gift ,int n,SDL_Surface * screen,);
 void Gift(gft *gift,int n, SDL_Surface *screen,int roundNum,int level);
 bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * screen
-	,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic,SDL_Surface *shotUPic,int level,gft gift2);//menu in mixed with this
+	,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic,SDL_Surface *shotUPic,int level,gft gift2,int &checksound);//menu in mixed with this
 void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,SDL_Surface *shotDPic,int level
-		,Mix_Music * duringmusic,Mix_Music * spacecraftmisic);
+		,Mix_Music * duringmusic,Mix_Music * spacecraftmisic,int checksound);
 bool Shot(vector <ammo>& shot,SDL_Surface *screen,oppRckt & oppRocket,gft gift2,rckt rocket);//if true the opp is killed
 void Meteor(vector <meteor> & meteorite,SDL_Surface *screen
 	,SDL_Surface *meteorSPic,SDL_Surface *meteorBPic,int roundNum,int level);
@@ -106,6 +106,7 @@ int main()
 	int score=0;
 	int BGvelocity=4;
 	int level=1;
+	int  checksound=-1;
 	int coinNum=0;
 	bool protecter=false;
 	bool checkcolision=false;
@@ -183,11 +184,11 @@ int main()
     }
   //  SDL_BlitSurface( b, NULL, screen, &offset );
     SDL_Flip(screen);
-	Mix_PlayMusic(menumusic,-1);
+	Mix_PlayMusic(menumusic,checksound);
   	SDL_Delay(1000);
 	cout<<"A\n";
     Mix_PauseMusic();
-	Mix_PlayMusic(duringmusic,-1);
+	Mix_PlayMusic(duringmusic,checksound);
 	do
 
 	{
@@ -236,7 +237,7 @@ int main()
       	// cout<<"13\n";
     	Gift(&gift[0],7, screen,roundNum,level);
     	// cout<<"14\n";
-    	meniu=Rocket(rocket,shot,event,screen,rocketR_pic,rocketL_pic,shotU_pic,level,gift[2]);
+    	meniu=Rocket(rocket,shot,event,screen,rocketR_pic,rocketL_pic,shotU_pic,level,gift[2],checksound);
     	// cout<<"15\n";
     	Meteor(meteorite,screen,meteorS_pic,meteorB_pic,roundNum,level);
     	// cout<<"16\n";
@@ -249,7 +250,7 @@ int main()
 		{
 			// cout<<"w\n";
 
-    		OppRocket(oppRocket,shot,screen,shotD_pic,level,duringmusic,spacecraftmisic);
+    		OppRocket(oppRocket,shot,screen,shotD_pic,level,duringmusic,spacecraftmisic,checksound);
 		}
 		// cout<<"G\n";
     	Shot(shot,screen,oppRocket,gift[2],rocket);
@@ -327,7 +328,7 @@ void Gift(gft * gift,int n,SDL_Surface * screen ,int roundNum ,int level)//1.com
 	} 			
 }
 bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * screen
-	,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic,SDL_Surface *shotUPic,int level,gft gift2) //1.velocity inhanced........>done
+	,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic,SDL_Surface *shotUPic,int level,gft gift2,int &checksound) //1.velocity inhanced........>done
 { 
     if(rocket.vy!=0)//in tike baraye avale bazie k safine amoodi harekat mikone 
     { 
@@ -390,14 +391,14 @@ bool Rocket(rckt &rocket,vector <ammo> &shot,SDL_Event &event,SDL_Surface * scre
     return true; 
 } 
 void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,SDL_Surface *shotDPic,int level
-	,Mix_Music * duringmusic,Mix_Music * spacecraftmisic)//1. healt will increas 2.shots through in shorter time
+	,Mix_Music * duringmusic,Mix_Music * spacecraftmisic,int checksound)//1. healt will increas 2.shots through in shorter time
 {
 	if(oppRocket.state==0)
 	{
 		{
 			cout<<"?/////////////////////////////////////";
 			Mix_PauseMusic();
-			Mix_PlayMusic(spacecraftmisic,-1);
+			Mix_PlayMusic(spacecraftmisic,checksound);
 			oppRocket.shotnum=4+(2*level);
 			oppRocket.state=1;
 			oppRocket.vy=2;
@@ -416,7 +417,7 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,SDL_S
 			if(oppRocket.yp<=0)
 			{
 				Mix_PauseMusic();
-				Mix_PlayMusic(duringmusic,-1);
+				Mix_PlayMusic(duringmusic,checksound);
 				oppRocket.state=0;
 			}
 
@@ -881,4 +882,11 @@ void write_menu_OPP_HEALTH (SDL_Surface *screen,int score,TTF_Font* font)
 	3.heart
 	4.shot
 	5.sound
+if(klick)
+{
+	if(Mix_PlayingMusic() != 0)
+		Mix_PauseMusic();
+	else 
+		Mix_PlayMusic(duringmusic,-1);
+}
 */
