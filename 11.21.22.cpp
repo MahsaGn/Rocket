@@ -91,11 +91,11 @@ bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vec
 	std::vector<ammo> &shot,int * score,SDL_Surface * screen,SDL_Surface *rocketRPic,SDL_Surface *rocketLPic
 	,bool* protecter,int * coinNum );
 void set_text( int x, int y, SDL_Surface* source,SDL_Surface *coinPic, SDL_Surface* destination);
-void write_menu_score (SDL_Surface *screen,int score);
-void write_menu_health (SDL_Surface *screen,int score);
-void write_menu_shot(SDL_Surface *screen,int score);
-void write_menu_level(SDL_Surface *screen,int score);
-void write_menu_OPP_HEALTH(SDL_Surface *screen,int score);
+void write_menu_score (SDL_Surface *screen,int score,TTF_Font* font);
+void write_menu_health (SDL_Surface *screen,int score,TTF_Font* font);
+void write_menu_shot(SDL_Surface *screen,int score,TTF_Font* font);
+void write_menu_level(SDL_Surface *screen,int score,TTF_Font* font);
+void write_menu_OPP_HEALTH(SDL_Surface *screen,int score,TTF_Font* font);
 TTF_Font* font;
 int main()
 {
@@ -154,6 +154,9 @@ int main()
 	SDL_Surface *cardiac = IMG_Load("cardiac.png");
 	SDL_Surface *Focus = IMG_Load("Focus-512.png");
 	SDL_Surface *Money_Bag_Emote = IMG_Load("Money_Bag_Emote.png");
+	TTF_Init();
+	TTF_Font* font;
+	font = TTF_OpenFont("A.ttf",20);
     {
   		SDL_Rect offsete;
     	offsete.x = 0;
@@ -181,7 +184,7 @@ int main()
   //  SDL_BlitSurface( b, NULL, screen, &offset );
     SDL_Flip(screen);
 	Mix_PlayMusic(menumusic,-1);
-  	SDL_Delay(3000);
+  	SDL_Delay(1000);
 	cout<<"A\n";
     Mix_PauseMusic();
 	Mix_PlayMusic(duringmusic,-1);
@@ -191,14 +194,14 @@ int main()
 		
 	level=((int)score/200)+1 ;
     score=(int)(roundNum/20)+coinNum;
-	// set_text(460,200,text,screen);	
+	//set_text(460,200,text,screen);	
 	// cout<<"1.9\n";
 	//SDL_Flip(screen);	
-	 // write_menu_score(screen,score);
+	 write_menu_score(screen,score,font);
 		// cout<<"1\n";
-		 // write_menu_health(screen,rocket.health);
+		write_menu_health(screen,rocket.health,font);
 		// cout<<"2\n";
-		// write_menu_level(screen,level);
+		write_menu_level(screen,level,font);
 		// cout<<"3\n";
 		cout<<roundNum<<"===============\n";	
 		//cout<<duringmusic<<endl;
@@ -216,7 +219,7 @@ int main()
 				// cout<<"7\n";
 			}
 		// cout<<"8\n";
-		// write_menu_shot(screen,sh);
+		write_menu_shot(screen,rocket.shotnum,font);
 		// cout<<"9\n";
 		roundNum++;
 		// cout<<"10\n";
@@ -238,7 +241,7 @@ int main()
     	Meteor(meteorite,screen,meteorS_pic,meteorB_pic,roundNum,level);
     	// cout<<"16\n";
     	Coin(coin,meteorite,screen,coin_pic,gift[5],gift[3],rocket.xp,rocket.yp,roundNum,level);
-    	// cout<<"17\n";
+    	// cout<	<"17\n";
     	// cout<<"18\n";
 		//checkcolision=colliosion (rocket,&gift[0],meteorite,coin,shot,&coinNum, screen,rocketR_pic,rocketL_pic,&protecter,&coinNum);
 		//cout<<checkcolision<<endl;
@@ -404,7 +407,7 @@ void OppRocket(oppRckt &oppRocket,vector <ammo> &shot, SDL_Surface *screen,SDL_S
 	else
 	{
 		// cout<<"A\n";
-		//write_menu_OPP_HEALTH(screen,oppRocket.health);
+		// write_menu_OPP_HEALTH(screen,oppRocket.health);
 	// cout<<"BB\n";
 		if(oppRocket.vy!=0)//hengame vared shodan b safhe
 		{
@@ -799,88 +802,70 @@ bool colliosion (rckt &rocket, gft *gift,std::vector<meteor> &meteorite,std::vec
 	
 	return false;
 }
-/*void set_text( int x, int y, SDL_Surface* source, SDL_Surface* destination )
+void set_text( int x, int y, SDL_Surface* source, SDL_Surface* destination )
 {
     SDL_Rect offset;
     offset.x = x;
     offset.y = y;
     SDL_BlitSurface( source, NULL, destination, &offset );
 }
-void write_menu_score (SDL_Surface *screen,int score)
+void write_menu_score (SDL_Surface *screen,int score,TTF_Font* font)
 {
-	TTF_Init();
-	TTF_Font* font;
-	font = TTF_OpenFont("a.otf",20);
+
 	SDL_Surface* text;
 	SDL_Color text_color={100,0,200};
 	stringstream score2;
-    score2 <<" SCORE : "<<score;
+    score2 <<""<<score;
 	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
 	set_text(460,100,text,screen);	
 	SDL_Flip(screen);
 
 }
-void write_menu_health (SDL_Surface *screen,int score)
+void write_menu_health (SDL_Surface *screen,int score,TTF_Font* font)
 {
-	TTF_Init();
-	TTF_Font* font;
-	font = TTF_OpenFont("a.otf",20);
+
 	SDL_Surface* text;
 	SDL_Color text_color={100,0,200};
 	stringstream score2;
-    score2 <<" HEALTH : "<<score;
+    score2 <<""<<score;
 	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
 	set_text(460,150,text,screen);	
 	SDL_Flip(screen);	
 }
-void write_menu_shot (SDL_Surface *screen,int score)
+void write_menu_shot (SDL_Surface *screen,int score,TTF_Font* font)
 {
-	TTF_Init();
-	// cout<<"1.1\n";
-	// cout<<"1.2\n";
-	cout<<"1.3\n";
+
 	SDL_Surface* text;
-	cout<<"1.4\n";
 	SDL_Color text_color={100,0,200};
-	cout<<"1.5\n";
 	stringstream score2;
-	cout<<"1.6\n";
-    score2 <<" SHOT : "<<score;
-    cout<<"1.7\n"<<"font ........"<<font<<endl;
+    score2 <<""<<score;
 	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
-	// cout<<score2.str().c_str();
-	// cout<<"1.8\n";
-	set_text(460,200,text,screen);	
-	cout<<"1.9\n";
-	SDL_Flip(screen);	
-	cout<<"1.10\n";
+	set_text(460,200,text,screen);
+	SDL_Flip(screen);
+
 }
-void write_menu_level (SDL_Surface *screen,int score)
+void write_menu_level (SDL_Surface *screen,int score,TTF_Font* font)
 {
-	TTF_Init();
-	TTF_Font* font;
-	font = TTF_OpenFont("a.otf",20);
+
 	SDL_Surface* text;
 	SDL_Color text_color={100,0,200};
 	stringstream score2;
-    score2 <<" LEVEL : "<<score;
+    score2 <<""<<score;
 	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
 	set_text(460,50,text,screen);	
 	SDL_Flip(screen);	
 }
-void write_menu_OPP_HEALTH (SDL_Surface *screen,int score)
+void write_menu_OPP_HEALTH (SDL_Surface *screen,int score,TTF_Font* font)
 {
-	TTF_Init();
-	TTF_Font* font;
-	font = TTF_OpenFont("a.otf",20);
+
 	SDL_Surface* text;
 	SDL_Color text_color={255,0,0};
 	stringstream score2;
-    score2 <<" HEALTH : "<<score;
+    score2 <<""<<score;
 	text = TTF_RenderText_Solid(font,score2.str().c_str(), text_color);
 	set_text(460,300,text,screen);	
 	SDL_Flip(screen);	
-}*/
+}
 //////////////////////////////
 /*
 =>rocket strike:
